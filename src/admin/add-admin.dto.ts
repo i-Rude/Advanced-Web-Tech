@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, MinLength } from "class-validator";
+import { IsEmail, isNotEmpty, IsNotEmpty, IsOptional, MinLength } from "class-validator";
 
 export class AddAdminDto{
     @IsNotEmpty()
@@ -8,4 +8,7 @@ export class AddAdminDto{
     @IsNotEmpty()
     @IsEmail()
     email: string;
+    
+    @IsOptional()
+    fileName:string;
 }
