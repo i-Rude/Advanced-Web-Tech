@@ -15,6 +15,14 @@ export class AdminService{
         },
     ];
 
+    private getNextId(): number {
+    if (this.admins.length === 0) {
+      return 1;
+    }
+    const maxId = Math.max(...this.admins.map(a => a.id));
+    return maxId + 1;
+  }
+
     findAll(){
         return this.admins;
     }
@@ -32,7 +40,7 @@ export class AdminService{
     //     return id;
     // }
     createAdmin(addAdminDto:AddAdminDto){
-        const newAdmin = {id: Date.now(), ...addAdminDto};
+        const newAdmin = {id: this.getNextId(), ...addAdminDto};
         this.admins.push(newAdmin);
         return newAdmin;
         

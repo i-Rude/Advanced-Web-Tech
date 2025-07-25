@@ -8,4 +8,7 @@ export class UpdateAdminDto{
     @IsOptional()
     @IsEmail()
     email?:string;
+
+    @IsOptional()
+    file? : string;
 }
