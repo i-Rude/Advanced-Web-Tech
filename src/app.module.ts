@@ -3,6 +3,7 @@ import { AdminModule } from './admin/admin.module';
 import { ConfigModule } from '@nestjs/config';
 import { ProductService } from './product/product.service';
 import { ProductModule } from './product/product.module';
+import { CustomerModule } from './customer/customer.module';
 
 
 @Module({
@@ -10,7 +11,7 @@ import { ProductModule } from './product/product.module';
     ConfigModule.forRoot({
       isGlobal:true
     }),
-    AdminModule , ProductModule],
+    AdminModule , ProductModule, CustomerModule],
   controllers: [],
   providers: [],
 })
