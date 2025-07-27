@@ -56,7 +56,7 @@ export class AdminController{
                 }
 
                 },
-                limits:{fileSize:3000*1000*1000},
+                limits:{fileSize:2*1024*1024},
                 storage:diskStorage({
                     destination:'./upload',
                     filename: function (req, file, cb) {
@@ -65,20 +65,19 @@ export class AdminController{
                 })
             }
         ))
-        addAdmin(
+    addAdmin(
     @Body() addAdminDto: AddAdminDto,
     @UploadedFile() file: Express.Multer.File,
-  ) {
-    addAdminDto.fileName = file.filename;
-    return {
-      message: 'Admin created successfully!',
-      data: addAdminDto,
-    };
+)   {
+        addAdminDto.fileName = file.filename;
+        const createdAdmin = this.adminService.createAdmin(addAdminDto);
+        return createdAdmin; 
+    }
         
     
 
-    }
+}
 
 
     
-}
+

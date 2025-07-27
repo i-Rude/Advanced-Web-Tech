@@ -5,7 +5,7 @@ export class AddProductDto {
   @IsString()
   name: string;
 
-  @IsOptional()
+  
   @IsString()
   description: string;
 
@@ -18,6 +18,5 @@ export class AddProductDto {
   stock: number;
 
   @IsOptional()
-  @IsString()
   file?: string; 
 }
