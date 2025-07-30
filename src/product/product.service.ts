@@ -1,46 +1,38 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { AddProductDto } from "./add-product.dto";
+import { UpdateProductDto } from "./update-product.dto";
 
 @Injectable()
-export class ProductService{
-    private products = [
-        {
-            id : 1,
-            name : "T-Shirt",
-            description : "Full Sleve Solid T-Shirt",
-            price : 400,
-            stock : 20,
-        },
+export class ProductService {
+  private products: (AddProductDto & { id: number; discount: number })[] = [];
 
-    ];
-
-    private getNextId(): number {
-    if (this.products.length === 0) {
-      return 1; 
-    }
-    const maxId = Math.max(...this.products.map(p => p.id));
-    return maxId + 1;
+  private getNextId(): number {
+    return this.products.length === 0 ? 1 : Math.max(...this.products.map(p => p.id)) + 1;
   }
 
-    
-    findAll(){
-        return this.products;
-    }
+  addProduct(productDto: AddProductDto) {
+    const newProduct = { id: this.getNextId(), discount: 0, ...productDto };
+    this.products.push(newProduct);
+    return newProduct;
+  }
 
-    getProductById(id: number){
-        const product = this.products.find((p) => p.id === id)
-        if(!product){
-            throw new NotFoundException("Product Found");
-        }
-        return product;
-    }
+  updateProduct(id: number, updateData: UpdateProductDto) {
+    const index = this.products.findIndex(p => p.id === id);
+    if (index === -1) throw new NotFoundException("Product not found");
 
-    addProduct( addProductDto : AddProductDto){
-        const newProduct = {id: this.getNextId(), ...addProductDto};
-        this.products.push(newProduct);
-        return newProduct;
+    this.products[index] = { ...this.products[index], ...updateData };
+    return this.products[index];
+  }
 
-    }
+  deleteProduct(id: number) {
+    const index = this.products.findIndex(p => p.id === id);
+    if (index === -1) throw new NotFoundException("Product not found");
 
-    
+    const deleted = this.products.splice(index, 1);
+    return { message: "Product deleted successfully", deletedProduct: deleted[0] };
+  }
+
+  getAllProducts() {
+    return this.products;
+  }
 }

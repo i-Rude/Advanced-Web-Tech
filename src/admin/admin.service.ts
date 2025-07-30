@@ -1,57 +1,70 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, ConflictException } from "@nestjs/common";
 import { AddAdminDto } from "./add-admin.dto";
 import { UpdateAdminDto } from "./update-admin.dto";
-
-
-
+import { InjectRepository } from "@nestjs/typeorm";
+import { Admin } from "./admin.entity";
+import { Repository } from "typeorm";
 
 @Injectable()
-export class AdminService{
-    private admins  =[
-        {
-            id : 1,
-            name : "Tanjil",
-            email : "tanilm445@gmail.com",
-        },
-    ];
+export class AdminService {
+    
+    constructor(
+        @InjectRepository(Admin)
+        private readonly adminRepository:Repository<Admin>,
 
-    private getNextId(): number {
-    if (this.admins.length === 0) {
-      return 1;
-    }
-    const maxId = Math.max(...this.admins.map(a => a.id));
-    return maxId + 1;
-  }
+    ){}
 
-    findAll(){
-        return this.admins;
+    async findAll():Promise<Admin[]> {
+        return this.adminRepository.find();
     }
 
-    getAdminById(id:number){
-        const admin = this.admins.find((a) => a.id === id);
-        if(!admin) throw new NotFoundException("Admin not found");
+    async getAdminById(id: number):Promise<Admin> {
+        const admin = await this.adminRepository.findOne({where:{id}})
+        if (!admin) throw new NotFoundException("Admin not found");
         return admin;
     }
 
-    getAdmin():string{
-        return "This is admin";
+    async createAdmin(addAdminDto: AddAdminDto):Promise<Admin> {
+        const idExist = await this.adminRepository.findOne({where : {id:addAdminDto.id}});
+        if(idExist) throw new ConflictException('Admin with the same if already exists');
+
+        const emailExists = await this.adminRepository.findOne({where : {email: addAdminDto.email}});
+        if (emailExists) throw new ConflictException('Email already in use');
+
+        const newCreatedAdmin = this.adminRepository.create(addAdminDto);
+        return this.adminRepository.save(newCreatedAdmin);
     }
-    // getAdminWithId(id:number):number{
-    //     return id;
-    // }
-    createAdmin(addAdminDto:AddAdminDto){
-        const newAdmin = {id: this.getNextId(), ...addAdminDto};
-        this.admins.push(newAdmin);
-        return newAdmin;
-        
+    
+
+    async updateAdmin(id: number, updateAdminDto: UpdateAdminDto) :Promise<Admin>{
+        const admin = await this.getAdminById(id);
+
+        if(updateAdminDto.email && updateAdminDto.email != admin.email){
+            const ex = await this.adminRepository.findOne({where:{email:updateAdminDto.email}});
+            if(ex) throw new ConflictException('Email already exist')
+        }
+    Object.assign(admin,updateAdminDto);
+    return await this.adminRepository.save(admin);
     }
 
-    updateAdmin(id: number, updateAdminDto: UpdateAdminDto){
-        const adminExist = this.admins.findIndex((a) => a.id === id)
-        if(adminExist === -1) throw new NotFoundException("Admin Not Found");
-
-        this.admins[adminExist] = { ...this.admins[adminExist], ...updateAdminDto};
-        return this.admins[adminExist];
+    async changeStatus(id: number, status: 'active' | 'inactive'): Promise<Admin> {
+    const admin = await this.getAdminById(id);
+    admin.status = status;
+    return await this.adminRepository.save(admin);
     }
+
+    async deleteAdmin(id : number): Promise<Admin>{
+        const admin = await this.getAdminById(id);
+        admin.status = 'inactive';
+        return await this.adminRepository.save(admin);
+
+    }
+    async getInactive():Promise<Admin[]>{
+        return await this.adminRepository.find({where:{status:'inactive'}});
+    }
+    async getOlderThan(age:number):Promise<Admin[]>{
+        return await this.adminRepository.createQueryBuilder('admin').where('admin.age> :age',{age}).getMany();
+    }
+
     
 }
