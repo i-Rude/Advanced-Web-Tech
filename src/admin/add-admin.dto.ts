@@ -1,21 +1,37 @@
-import { IsEmail, isNotEmpty, IsNotEmpty, IsOptional, Matches, MinLength } from "class-validator";
+import { Type } from "class-transformer";
+import { IsEmail, IsIn, IsInt, isInt, isNotEmpty, IsNotEmpty, IsOptional, Matches, Min, MinLength } from "class-validator";
 
 export class AddAdminDto{
+
+    @IsInt()
+    @Min(1,{message: "Id Must Be a Positive Number"})
+    @Type(() => Number)
+    id : number;
+
     @IsNotEmpty()
     @MinLength(5)
-    @Matches(/^[A-za-z\s]+$/)
-    name : string;
+    @Matches(/^[A-Za-z\s]+$/, { message: 'Name should only contain alphabets' })
+    name: string;
 
     @IsNotEmpty()
     @IsEmail()
-    @Matches(/^[\w-.]+@aiub\.edu$/ , {message: "Email format must contain @aiub.edu"},)
+    @Matches(/^[a-zA-Z0-9._%+-]+@aiub\.edu$/, { message: 'Email must be a valid @aiub.edu address' })
     email: string;
 
     @IsNotEmpty({ message: 'NID number is required' })
-    @Matches(/^\d{10}$/, {
-    message: 'Bangladeshi NID must be exactly 10 digits',
+    @Matches(/^\d{10,17}$/, {
+    message: 'Bangladeshi NID must be 10 to 17 digits',
     })
     nid: string;
+
+    @IsInt()
+    @Min(18,{message:"Admin must be at least 18 years old"})
+    @Type(() => Number)
+    age : number;
+
+    @IsOptional()
+    @IsIn(['active', 'inactive'])
+    status?:'active' | 'inactive';
     
     @IsOptional()
     fileName:string;
