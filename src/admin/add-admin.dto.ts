@@ -10,7 +10,7 @@ export class AddAdminDto{
 
     @IsNotEmpty()
     @MinLength(5)
-    @Matches(/^[A-Za-z\s]+$/, { message: 'Name should only contain alphabets' })
+    @Matches(/^[A-Z][a-zA-Z\s]*$/, { message: 'Name should start with a capital letter and  must contain only alphabets' })
     name: string;
 
     @IsNotEmpty()

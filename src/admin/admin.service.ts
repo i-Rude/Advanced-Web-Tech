@@ -36,16 +36,17 @@ export class AdminService {
     }
     
 
-    async updateAdmin(id: number, updateAdminDto: UpdateAdminDto) :Promise<Admin>{
+    async updateAdmin(id: number, updateAdminDto: UpdateAdminDto): Promise<Admin> {
         const admin = await this.getAdminById(id);
 
-        if(updateAdminDto.email && updateAdminDto.email != admin.email){
-            const ex = await this.adminRepository.findOne({where:{email:updateAdminDto.email}});
-            if(ex) throw new ConflictException('Email already exist')
+        if (updateAdminDto.email && updateAdminDto.email !== admin.email) {
+            const existingAdmin = await this.adminRepository.findOne({ where: { email: updateAdminDto.email } });
+        if (existingAdmin) throw new ConflictException('Email already exists');
         }
-    Object.assign(admin,updateAdminDto);
-    return await this.adminRepository.save(admin);
+
+    return await this.adminRepository.save({ ...admin, ...updateAdminDto });
     }
+
 
     async changeStatus(id: number, status: 'active' | 'inactive'): Promise<Admin> {
     const admin = await this.getAdminById(id);
@@ -53,10 +54,9 @@ export class AdminService {
     return await this.adminRepository.save(admin);
     }
 
-    async deleteAdmin(id : number): Promise<Admin>{
+    async deleteAdmin(id : number): Promise<void>{
         const admin = await this.getAdminById(id);
-        admin.status = 'inactive';
-        return await this.adminRepository.save(admin);
+        await this.adminRepository.remove(admin);
 
     }
     async getInactive():Promise<Admin[]>{

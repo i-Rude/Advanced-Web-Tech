@@ -15,6 +15,6 @@ export class Admin{
     @Column({default:'active'})
     status? : 'active' | 'inactive';
     @Column({nullable:true})
-    file : string;
+    fileName : string;
 
 }

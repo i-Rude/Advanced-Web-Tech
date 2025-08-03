@@ -22,7 +22,7 @@ import { Admin } from './admin/admin.entity';
       password:'admin',
       database:'ecommerce',
       entities:[Admin],
-      synchronize:false,
+      synchronize:true,
 
 
     })

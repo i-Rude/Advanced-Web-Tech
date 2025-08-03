@@ -1,6 +1,7 @@
 import {
     Body,
     Controller,
+    Delete,
     Get,
     Param,
     ParseIntPipe,
@@ -27,7 +28,7 @@ export class AdminController {
     return await this.adminService.findAll();
     }
 
-    @Get(":id")
+    @Get("byId/:id")
     async getAdminById(@Param("id", ParseIntPipe) id: number) {
         return await this.adminService.getAdminById(id);
     }
@@ -45,7 +46,7 @@ export class AdminController {
         return await this.adminService.updateAdmin(id, updateAdminDto);
     }
 
-    @Patch(':id/status')
+    @Patch(':id/updateStatus')
     async changeStatus(@Param('id', ParseIntPipe) id: number, @Body('status') status: 'active' | 'inactive') {
     return await this.adminService.changeStatus(id, status);
     }
@@ -53,6 +54,16 @@ export class AdminController {
     @Get('upper/:age')
     async olderThan(@Param('age', ParseIntPipe) age: number) {
     return await this.adminService.getOlderThan(age);
+    }
+    @Get('inactive')
+    async getInactiveAdmins(){
+      return await this.adminService.getInactive();
+    }
+
+    @Delete(':id')
+    async deleteAdmin(@Param('id', ParseIntPipe) id : number){
+      await this.adminService.deleteAdmin(id);
+      return { message: `Admin with id ${id} deleted successfully` };
     }
 
     @Post('file')
@@ -84,5 +95,6 @@ async addAdmin(
   }
   return await this.adminService.createAdmin(addAdminDto);
 }
+
 
 }
