@@ -1,57 +1,52 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { AddSellerDto } from "./add-seller.dto";
-import { UpdateSellerDto } from "./update-seller.dto";
-
-
-
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Seller } from './seller.entity';
+import { AddSellerDto } from './add-seller.dto';
+import { UpdateSellerDto } from './update-seller.dto';
 
 @Injectable()
-export class SellerService{
-    private sellers  =[
-        {
-            id : 1,
-            name : "Tanjil",
-            email : "tanilm445@gmail.com",
-        },
-    ];
+export class SellerService {
+  constructor(
+    @InjectRepository(Seller)
+    private readonly sellerRepository: Repository<Seller>,
+  ) {}
 
-    private getNextId(): number {
-    if (this.sellers.length === 0) {
-      return 1;
-    }
-    const maxId = Math.max(...this.sellers.map(a => a.id));
-    return maxId + 1;
+  async createSeller(addSellerDto: AddSellerDto): Promise<Seller> {
+    const emailExists = await this.sellerRepository.findOne({ where: { email: addSellerDto.email } });
+    if (emailExists) throw new ConflictException('Email already in use');
+
+    const seller = this.sellerRepository.create({
+      ...addSellerDto,
+      phone: Number(addSellerDto.phone),
+    });
+    return await this.sellerRepository.save(seller);
   }
 
-    findAll(){
-        return this.sellers;
-    }
+  async findAll(): Promise<Seller[]> {
+    return await this.sellerRepository.find();
+  }
 
-    getSellerById(id:number){
-        const seller = this.sellers.find((a) => a.id === id);
-        if(!seller) throw new NotFoundException("Seller not found");
-        return seller;
-    }
+  async getSellerById(id: number): Promise<Seller> {
+    const seller = await this.sellerRepository.findOne({ where: { id } });
+    if (!seller) throw new NotFoundException('Seller not found');
+    return seller;
+  }
 
-    getSeller():string{
-        return "This is seller";
-    }
-    // getSellerWithId(id:number):number{
-    //     return id;
-    // }
-    createSeller(addSellerDto:AddSellerDto){
-        const newSeller = {id: this.getNextId(), ...addSellerDto};
-        this.sellers.push(newSeller);
-        return newSeller;
-        
-    }
+  async updateSeller(id: number, updateSellerDto: UpdateSellerDto): Promise<Seller> {
+    const seller = await this.getSellerById(id);
 
-    updateSeller(id: number, updateSellerDto: UpdateSellerDto){
-        const sellerExist = this.sellers.findIndex((a) => a.id === id)
-        if(sellerExist === -1) throw new NotFoundException("Seller Not Found");
+    Object.assign(seller, updateSellerDto);
+    return await this.sellerRepository.save(seller);
+  }
 
-        this.sellers[sellerExist] = { ...this.sellers[sellerExist], ...updateSellerDto};
-        return this.sellers[sellerExist];
-    }
-    
-} 
+  async deactivateSeller(id: number): Promise<Seller> {
+    const seller = await this.getSellerById(id);
+    seller.status = 'inactive';
+    return await this.sellerRepository.save(seller);
+  }
+
+  async getActiveSellers(): Promise<Seller[]> {
+    return await this.sellerRepository.find({ where: { status: 'active' } });
+  }
+}

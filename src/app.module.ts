@@ -7,6 +7,8 @@ import { CustomerModule } from './customer/customer.module';
 import { TypeORMError } from 'typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Admin } from './admin/admin.entity';
+import { Seller } from './seller/seller.entity';
+import { Product } from './product/product.entity';
 
 
 @Module({
@@ -21,7 +23,7 @@ import { Admin } from './admin/admin.entity';
       username:'postgres',
       password:'admin',
       database:'ecommerce',
-      entities:[Admin],
+      entities:[Admin,Seller,Product ],
       synchronize:true,
 
 

@@ -1,10 +1,12 @@
-import {Module} from '@nestjs/common'
-import { SellerService } from './seller.service';
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Seller } from './seller.entity';
 import { SellerController } from './seller.controller';
-
+import { SellerService } from './seller.service';
 
 @Module({
-    controllers:[SellerController],
-    providers:[SellerService],
+  imports: [TypeOrmModule.forFeature([Seller])],
+  controllers: [SellerController],
+  providers: [SellerService],
 })
-export class SellerModule{} 
+export class SellerModule {}

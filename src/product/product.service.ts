@@ -1,38 +1,38 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { AddProductDto } from "./add-product.dto";
-import { UpdateProductDto } from "./update-product.dto";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Product } from './product.entity';
+import { AddProductDto } from './add-product.dto';
+import { UpdateProductDto } from './update-product.dto';
 
 @Injectable()
 export class ProductService {
-  private products: (AddProductDto & { id: number; discount: number })[] = [];
+  constructor(
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>,
+  ) {}
 
-  private getNextId(): number {
-    return this.products.length === 0 ? 1 : Math.max(...this.products.map(p => p.id)) + 1;
+  async addProduct(productDto: AddProductDto): Promise<Product> {
+    const product = this.productRepository.create(productDto);
+    return await this.productRepository.save(product);
   }
 
-  addProduct(productDto: AddProductDto) {
-    const newProduct = { id: this.getNextId(), discount: 0, ...productDto };
-    this.products.push(newProduct);
-    return newProduct;
+  async updateProduct(id: number, updateData: UpdateProductDto): Promise<Product> {
+    const product = await this.productRepository.findOne({ where: { id } });
+    if (!product) throw new NotFoundException('Product not found');
+
+    Object.assign(product, updateData);
+    return await this.productRepository.save(product);
   }
 
-  updateProduct(id: number, updateData: UpdateProductDto) {
-    const index = this.products.findIndex(p => p.id === id);
-    if (index === -1) throw new NotFoundException("Product not found");
+  async deleteProduct(id: number): Promise<{ message: string }> {
+    const result = await this.productRepository.delete(id);
+    if (result.affected === 0) throw new NotFoundException('Product not found');
 
-    this.products[index] = { ...this.products[index], ...updateData };
-    return this.products[index];
+    return { message: 'Product deleted successfully' };
   }
 
-  deleteProduct(id: number) {
-    const index = this.products.findIndex(p => p.id === id);
-    if (index === -1) throw new NotFoundException("Product not found");
-
-    const deleted = this.products.splice(index, 1);
-    return { message: "Product deleted successfully", deletedProduct: deleted[0] };
-  }
-
-  getAllProducts() {
-    return this.products;
+  async getAllProducts(): Promise<Product[]> {
+    return await this.productRepository.find();
   }
 }
