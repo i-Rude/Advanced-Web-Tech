@@ -10,6 +10,7 @@ import { Admin } from './admin/admin.entity';
 import { Seller } from './seller/seller.entity';
 import { Product } from './product/product.entity';
 import { Customer } from './customer/customer.entity';
+import { AuthModule } from './auth/auth.module';
 
 
 @Module({
@@ -22,7 +23,7 @@ import { Customer } from './customer/customer.entity';
       host: 'localhost',
       port: 5432,
       username:'postgres',
-      password:'5668',
+      password:'admin',
       database:'ecommerce',
       entities:[Admin, Customer, Seller,Product],
       synchronize:true,
@@ -31,7 +32,7 @@ import { Customer } from './customer/customer.entity';
     })
 
     ,
-    AdminModule , ProductModule, CustomerModule],
+    AdminModule , ProductModule, CustomerModule, AuthModule],
   controllers: [],
   providers: [],
   

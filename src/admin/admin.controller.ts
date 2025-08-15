@@ -10,6 +10,7 @@ import {
     Put,
     Query,
     UploadedFile,
+    UseGuards,
     UseInterceptors,
 } from "@nestjs/common";
 import { AdminService } from "./admin.service";
@@ -18,17 +19,20 @@ import { UpdateAdminDto } from "./update-admin.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
 import { Express } from "express";
+import { AuthGuard } from "src/auth/auth.guard";
 
 @Controller("admin")
 export class AdminController {
     constructor(private readonly adminService: AdminService) {}
 
     @Get()
+    @UseGuards(AuthGuard)
     async getAllAdmins(){
     return await this.adminService.findAll();
     }
 
     @Get("byId/:id")
+    @UseGuards(AuthGuard)
     async getAdminById(@Param("id", ParseIntPipe) id: number) {
         return await this.adminService.getAdminById(id);
     }
@@ -38,7 +42,8 @@ export class AdminController {
         return await this.adminService.createAdmin(addAdminDto);
     }
 
-    @Put(":id")
+    @Patch(":id")
+    @UseGuards(AuthGuard)
     async updateAdmin(
         @Param("id", ParseIntPipe) id: number,
         @Body() updateAdminDto: UpdateAdminDto
@@ -46,7 +51,8 @@ export class AdminController {
         return await this.adminService.updateAdmin(id, updateAdminDto);
     }
 
-    @Patch(':id/updateStatus')
+    @Patch('updateStatus/:id')
+    @UseGuards(AuthGuard)
     async changeStatus(@Param('id', ParseIntPipe) id: number, @Body('status') status: 'active' | 'inactive') {
     return await this.adminService.changeStatus(id, status);
     }
@@ -95,6 +101,13 @@ async addAdmin(
   }
   return await this.adminService.createAdmin(addAdminDto);
 }
-
+@Get('check')
+@UseGuards(AuthGuard)
+testProtected() {
+  return {
+    message: 'You are authenticated',
+    
+  };
+}
 
 }

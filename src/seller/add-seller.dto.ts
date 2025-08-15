@@ -16,9 +16,6 @@ export class AddSellerDto {
 
   @IsNotEmpty({ message: 'Email is required' })
   @IsEmail({}, { message: 'Email must be a valid email address' })
-  @Matches(/^[\w-.]+@aiub\.edu$/, {
-    message: 'Email must be a valid AIUB email (e.g., name@aiub.edu)',
-  })
   email: string;
 
   @IsNotEmpty({ message: 'Password is required' })
@@ -34,7 +31,7 @@ export class AddSellerDto {
   phone: string;
 
   @IsNotEmpty({ message: 'NID number is required' })
-  @Matches(/^\d{10}$/, {
+  @Matches(/^\d{10,17}$/, {
     message: 'Bangladeshi NID must be exactly 10 digits',
   })
   nid: string;
