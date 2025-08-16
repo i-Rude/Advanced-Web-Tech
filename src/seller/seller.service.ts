@@ -1,52 +1,170 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  UnauthorizedException,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { Seller } from './seller.entity';
 import { AddSellerDto } from './add-seller.dto';
 import { UpdateSellerDto } from './update-seller.dto';
+import * as bcrypt from 'bcrypt';
+import { AdminService } from 'src/admin/admin.service';
 
 @Injectable()
 export class SellerService {
+  private readonly salt = 10;
+
   constructor(
     @InjectRepository(Seller)
     private readonly sellerRepository: Repository<Seller>,
+    @Inject(forwardRef(() => AdminService))
+    private adminService: AdminService,
   ) {}
 
-  async createSeller(addSellerDto: AddSellerDto): Promise<Seller> {
-    const emailExists = await this.sellerRepository.findOne({ where: { email: addSellerDto.email } });
-    if (emailExists) throw new ConflictException('Email already in use');
+  async createSeller(addSellerDto: AddSellerDto, adminId: number): Promise<Seller> {
+  if (!addSellerDto.password) {
+    throw new BadRequestException('Password is required');
+  }
 
-    const seller = this.sellerRepository.create({
-      ...addSellerDto,
-      phone: Number(addSellerDto.phone),
+  const [emailExists, nidExists] = await Promise.all([
+    this.sellerRepository.findOne({ where: { email: addSellerDto.email } }),
+    this.sellerRepository.findOne({ where: { nid: addSellerDto.nid } }),
+  ]);
+  if (emailExists) throw new ConflictException('Email already exists');
+  if (nidExists) throw new ConflictException('NID already exists');
+
+  const seller = new Seller();
+  seller.name = addSellerDto.name;
+  seller.email = addSellerDto.email;
+  seller.password = await bcrypt.hash(addSellerDto.password, this.salt);
+  seller.phone = Number(addSellerDto.phone); // ✅ stored as number
+  seller.nid = addSellerDto.nid;
+  seller.fileName = addSellerDto.fileName;
+
+  // ✅ Correct: assign the logged-in admin dynamically
+  const admin = await this.adminService.getAdminById(adminId);
+  if (!admin) {
+    throw new NotFoundException(`Admin with ID ${adminId} not found`);
+  }
+  seller.admin = admin;
+
+  const saved = await this.sellerRepository.save(seller);
+  return this.sellerRepository.findOneOrFail({
+    where: { id: saved.id },
+    relations: ['admin'],
+  });
+}
+
+
+  async changeSellerStatus(
+    id: number,
+    status: 'active' | 'inactive',
+    adminId: number,
+  ): Promise<Seller> {
+    const seller = await this.sellerRepository.findOne({
+      where: { id },
+      relations: ['admin'],
     });
-    return await this.sellerRepository.save(seller);
+    if (!seller) throw new NotFoundException('Seller not found');
+
+    // Admin can only modify their own sellers
+    if (!seller.admin || seller.admin.id !== adminId) {
+      throw new UnauthorizedException('You can only update your own sellers');
+    }
+
+    seller.status = status;
+    return this.sellerRepository.save(seller);
   }
 
   async findAll(): Promise<Seller[]> {
-    return await this.sellerRepository.find();
+    return this.sellerRepository.find({ relations: ['admin'] });
   }
 
   async getSellerById(id: number): Promise<Seller> {
-    const seller = await this.sellerRepository.findOne({ where: { id } });
+    const seller = await this.sellerRepository.findOne({ where: { id }, relations: ['admin'] });
     if (!seller) throw new NotFoundException('Seller not found');
     return seller;
   }
 
-  async updateSeller(id: number, updateSellerDto: UpdateSellerDto): Promise<Seller> {
-    const seller = await this.getSellerById(id);
+  // Admin updates any seller they own
+  async updateSeller(id: number, dto: UpdateSellerDto, adminId: number): Promise<Seller> {
+    const seller = await this.sellerRepository.findOne({ where: { id }, relations: ['admin'] });
+    if (!seller) throw new NotFoundException('Seller not found');
 
-    Object.assign(seller, updateSellerDto);
-    return await this.sellerRepository.save(seller);
+    if (!seller.admin || seller.admin.id !== adminId) {
+      throw new UnauthorizedException('You can only update your own sellers');
+    }
+
+    if (dto.email && dto.email !== seller.email) {
+      const exists = await this.sellerRepository.findOne({ where: { email: dto.email } });
+      if (exists) throw new ConflictException('Email already exists');
+    }
+
+    if (dto.password) {
+      dto.password = await bcrypt.hash(dto.password, this.salt);
+    }
+
+    Object.assign(seller, dto);
+    return this.sellerRepository.save(seller);
   }
 
-  async deactivateSeller(id: number): Promise<Seller> {
-    const seller = await this.getSellerById(id);
-    seller.status = 'inactive';
-    return await this.sellerRepository.save(seller);
+  // Seller updates themselves
+  async updateOwnSeller(selfId: number, dto: UpdateSellerDto): Promise<Seller> {
+    const seller = await this.getSellerById(selfId);
+
+    if (dto.email && dto.email !== seller.email) {
+      const exists = await this.sellerRepository.findOne({ where: { email: dto.email } });
+      if (exists) throw new ConflictException('Email already exists');
+    }
+
+    if (dto.password) {
+      dto.password = await bcrypt.hash(dto.password, this.salt);
+    }
+
+    Object.assign(seller, dto);
+    return this.sellerRepository.save(seller);
+  }
+
+  async deleteSeller(id: number, adminId: number): Promise<void> {
+    const seller = await this.sellerRepository.findOne({ where: { id }, relations: ['admin'] });
+    if (!seller) throw new NotFoundException('Seller not found');
+
+    if (!seller.admin || seller.admin.id !== adminId) {
+      throw new UnauthorizedException('You can only delete your own sellers');
+    }
+
+    await this.sellerRepository.delete(id);
+  }
+
+  async getSellersByAdmin(adminId: number): Promise<Seller[]> {
+    return this.sellerRepository.find({
+      where: { admin: { id: adminId } },
+      relations: ['admin'],
+    });
   }
 
   async getActiveSellers(): Promise<Seller[]> {
-    return await this.sellerRepository.find({ where: { status: 'active' } });
+    return this.sellerRepository.find({ where: { status: 'active' }, relations: ['admin'] });
   }
+
+  async findByEmail(email: string): Promise<Pick<Seller, 'id' | 'email' | 'password'> | null> {
+    return this.sellerRepository.findOne({
+      where: { email },
+      select: ['id', 'email', 'password'],
+    });
+  }
+
+  async searchSeller(q: string) {
+  return this.sellerRepository
+    .createQueryBuilder('seller')
+    .where('seller.id = :id', { id: Number(q) }) 
+    .orWhere('seller.name ILIKE :name', { name: `%${q}%` })
+    .getMany();
+}
+
 }

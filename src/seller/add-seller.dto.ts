@@ -8,10 +8,6 @@ import {
 
 export class AddSellerDto {
   @IsNotEmpty({ message: 'Name is required' })
-  @MinLength(5, { message: 'Name must be at least 5 characters long' })
-  @Matches(/^[A-Za-z\s]+$/, {
-    message: 'Name must not contain any special characters or numbers',
-  })
   name: string;
 
   @IsNotEmpty({ message: 'Email is required' })

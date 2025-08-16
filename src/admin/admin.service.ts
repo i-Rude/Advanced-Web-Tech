@@ -8,7 +8,7 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
-    private readonly saltOrRounds = 10;
+    private readonly salt = 10;
     constructor(
         @InjectRepository(Admin)
         private readonly adminRepository:Repository<Admin>,
@@ -35,7 +35,7 @@ export class AdminService {
         const phoneExists = await this.adminRepository.findOne({ where: { phone: addAdminDto.phone } });
         if (phoneExists) throw new ConflictException('Phone number already in use');
 
-        const hashedPassword = await bcrypt.hash(addAdminDto.password, this.saltOrRounds)
+        const hashedPassword = await bcrypt.hash(addAdminDto.password, this.salt)
 
         const newCreatedAdmin = this.adminRepository.create({
             ...addAdminDto,
@@ -58,9 +58,9 @@ export class AdminService {
             if (phoneExists) throw new ConflictException('Phone number already exists');
         }
 
-        // Hash the password if it's being updated
+        
         if (updateAdminDto.password) {
-            updateAdminDto.password = await bcrypt.hash(updateAdminDto.password, this.saltOrRounds);
+            updateAdminDto.password = await bcrypt.hash(updateAdminDto.password, this.salt);
         }
 
         return await this.adminRepository.save({ ...admin, ...updateAdminDto });
@@ -71,7 +71,7 @@ export class AdminService {
     const admin = await this.getAdminById(id);
     admin.status = status;
     return await this.adminRepository.save(admin);
-    }
+}
 
     async deleteAdmin(id : number): Promise<void>{
         const admin = await this.getAdminById(id);
@@ -90,6 +90,13 @@ export class AdminService {
     select: ['id', 'email', 'password']
     });
 }
-
+async getSellersByAdmin(adminId: number) {
+    const admin = await this.adminRepository.findOne({
+      where: { id: adminId },
+      relations: ['sellers'],
+    });
+    if (!admin) throw new NotFoundException('Admin not found');
+    return admin.sellers ?? [];
+  }
     
 }

@@ -5,10 +5,12 @@ import { AuthController } from './auth.controller';
 import { AdminModule } from '../admin/admin.module';
 import { jwtConstants } from './auth.constants';
 import { AuthGuard } from './auth.guard';
+import { SellerModule } from 'src/seller/seller.module';
 
 @Module({
   imports: [
     AdminModule,
+    SellerModule,
     JwtModule.register({
       global: true,
       secret: jwtConstants.secret,

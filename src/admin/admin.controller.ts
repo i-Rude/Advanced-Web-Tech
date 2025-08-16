@@ -9,6 +9,8 @@ import {
     Post,
     Put,
     Query,
+    Request,
+    UnauthorizedException,
     UploadedFile,
     UseGuards,
     UseInterceptors,
@@ -20,10 +22,15 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
 import { Express } from "express";
 import { AuthGuard } from "src/auth/auth.guard";
+import { AddSellerDto } from "src/seller/add-seller.dto";
+import { SellerService } from "src/seller/seller.service";
 
 @Controller("admin")
 export class AdminController {
-    constructor(private readonly adminService: AdminService) {}
+    constructor(private readonly adminService: AdminService,
+      private readonly sellerService : SellerService,
+      
+    ) {}
 
     @Get()
     @UseGuards(AuthGuard)
@@ -37,10 +44,10 @@ export class AdminController {
         return await this.adminService.getAdminById(id);
     }
 
-    @Post()
-    async createAdmin(@Body() addAdminDto: AddAdminDto) {
-        return await this.adminService.createAdmin(addAdminDto);
-    }
+    // @Post()
+    // async createAdmin(@Body() addAdminDto: AddAdminDto) {
+    //     return await this.adminService.createAdmin(addAdminDto);
+    // }
 
     @Patch(":id")
     @UseGuards(AuthGuard)
@@ -72,7 +79,7 @@ export class AdminController {
       return { message: `Admin with id ${id} deleted successfully` };
     }
 
-    @Post('file')
+    @Post()
     @UseInterceptors(
     FileInterceptor('myfile', {
     storage: diskStorage({
@@ -109,5 +116,19 @@ testProtected() {
     
   };
 }
+@Post('seller')
+@UseGuards(AuthGuard)
+async createSeller(@Body() dto: AddSellerDto, @Request() req) {
+  if (req.user.role !== 'admin') throw new UnauthorizedException();
+  return this.sellerService.createSeller(dto, req.user.id);  
+}
+
+@Get('mySellers')
+  @UseGuards(AuthGuard)
+  async mySellers(@Request() req) {
+    if (req.user.role !== 'admin') throw new UnauthorizedException();
+    return this.adminService.getSellersByAdmin(req.user.sub);
+  }
+  
 
 }
