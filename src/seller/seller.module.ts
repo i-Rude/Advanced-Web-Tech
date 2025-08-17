@@ -6,10 +6,12 @@ import { SellerService } from './seller.service';
 import { AdminModule } from 'src/admin/admin.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Seller]),
- forwardRef(() => AdminModule)],
+  imports: [
+    TypeOrmModule.forFeature([Seller]),
+    forwardRef(() => AdminModule)
+  ],
   controllers: [SellerController],
   providers: [SellerService],
-  exports:[SellerService],
+  exports: [SellerService],
 })
 export class SellerModule {}

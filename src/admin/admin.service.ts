@@ -98,5 +98,6 @@ async getSellersByAdmin(adminId: number) {
     if (!admin) throw new NotFoundException('Admin not found');
     return admin.sellers ?? [];
   }
+  
     
 }

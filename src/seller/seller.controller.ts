@@ -101,11 +101,17 @@ export class SellerController {
 
   @Delete(':id')
   @UseGuards(AuthGuard)
-  async deleteSeller(@Param('id', ParseIntPipe) id: number, @Request() req) {
+  async deleteSeller(
+  @Param('id', ParseIntPipe) id: number, 
+  @Request() req
+    ) {
     if (req.user.role !== 'admin') throw new UnauthorizedException();
     await this.sellerService.deleteSeller(id, req.user.sub);
-    return { message: `Seller with id ${id} deleted successfully` };
-  }
+    return { 
+    success: true,
+    message: `Seller with id ${id} deleted successfully` 
+    };
+}
 
  @Get('search')
  @UseGuards(AuthGuard)
@@ -148,4 +154,5 @@ export class SellerController {
     if (req.user.role !== 'admin') throw new UnauthorizedException();
     return this.sellerService.getActiveSellers();
   }
+  
 }

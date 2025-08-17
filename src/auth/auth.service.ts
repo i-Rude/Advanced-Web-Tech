@@ -9,7 +9,7 @@ import { jwtConstants } from './auth.constants';
 export class AuthService {
   constructor(
     private adminService: AdminService,
-    private sellerService: SellerService, // Add SellerService
+    private sellerService: SellerService, 
     private jwtService: JwtService,
   ) {}
 

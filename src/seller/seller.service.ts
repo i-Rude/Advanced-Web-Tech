@@ -42,11 +42,11 @@ export class SellerService {
   seller.name = addSellerDto.name;
   seller.email = addSellerDto.email;
   seller.password = await bcrypt.hash(addSellerDto.password, this.salt);
-  seller.phone = Number(addSellerDto.phone); // ✅ stored as number
+  seller.phone = Number(addSellerDto.phone);
   seller.nid = addSellerDto.nid;
   seller.fileName = addSellerDto.fileName;
 
-  // ✅ Correct: assign the logged-in admin dynamically
+  
   const admin = await this.adminService.getAdminById(adminId);
   if (!admin) {
     throw new NotFoundException(`Admin with ID ${adminId} not found`);
@@ -91,8 +91,7 @@ export class SellerService {
     return seller;
   }
 
-  // Admin updates any seller they own
-  async updateSeller(id: number, dto: UpdateSellerDto, adminId: number): Promise<Seller> {
+  async updateSeller(id: number, updateSellerdto: UpdateSellerDto, adminId: number): Promise<Seller> {
     const seller = await this.sellerRepository.findOne({ where: { id }, relations: ['admin'] });
     if (!seller) throw new NotFoundException('Seller not found');
 
@@ -100,20 +99,20 @@ export class SellerService {
       throw new UnauthorizedException('You can only update your own sellers');
     }
 
-    if (dto.email && dto.email !== seller.email) {
-      const exists = await this.sellerRepository.findOne({ where: { email: dto.email } });
+    if (updateSellerdto.email && updateSellerdto.email !== seller.email) {
+      const exists = await this.sellerRepository.findOne({ where: { email: updateSellerdto.email } });
       if (exists) throw new ConflictException('Email already exists');
     }
 
-    if (dto.password) {
-      dto.password = await bcrypt.hash(dto.password, this.salt);
+    if (updateSellerdto.password) {
+      updateSellerdto.password = await bcrypt.hash(updateSellerdto.password, this.salt);
     }
 
-    Object.assign(seller, dto);
+    Object.assign(seller, updateSellerdto);
     return this.sellerRepository.save(seller);
   }
 
-  // Seller updates themselves
+  
   async updateOwnSeller(selfId: number, dto: UpdateSellerDto): Promise<Seller> {
     const seller = await this.getSellerById(selfId);
 
@@ -131,15 +130,21 @@ export class SellerService {
   }
 
   async deleteSeller(id: number, adminId: number): Promise<void> {
-    const seller = await this.sellerRepository.findOne({ where: { id }, relations: ['admin'] });
+    const seller = await this.sellerRepository.findOne({ 
+      where: { id }, 
+      relations: ['admin'] 
+    });
+  
     if (!seller) throw new NotFoundException('Seller not found');
-
+  
     if (!seller.admin || seller.admin.id !== adminId) {
-      throw new UnauthorizedException('You can only delete your own sellers');
-    }
-
-    await this.sellerRepository.delete(id);
+      throw new UnauthorizedException(
+        'You can only delete sellers created by you'
+      );
   }
+
+  await this.sellerRepository.delete(id);
+}
 
   async getSellersByAdmin(adminId: number): Promise<Seller[]> {
     return this.sellerRepository.find({
@@ -166,5 +171,12 @@ export class SellerService {
     .orWhere('seller.name ILIKE :name', { name: `%${q}%` })
     .getMany();
 }
+async getInactiveSellers(): Promise<Seller[]> {
+  return this.sellerRepository.find({ 
+    where: { status: 'inactive' },
+    relations: ['admin'] 
+  });
+}
+
 
 }

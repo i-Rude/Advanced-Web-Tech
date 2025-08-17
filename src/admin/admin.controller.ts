@@ -79,7 +79,7 @@ export class AdminController {
       return { message: `Admin with id ${id} deleted successfully` };
     }
 
-    @Post()
+    @Post('createAdmin')
     @UseInterceptors(
     FileInterceptor('myfile', {
     storage: diskStorage({
@@ -129,6 +129,24 @@ async createSeller(@Body() dto: AddSellerDto, @Request() req) {
     if (req.user.role !== 'admin') throw new UnauthorizedException();
     return this.adminService.getSellersByAdmin(req.user.sub);
   }
+@Get('sellers/search')
+@UseGuards(AuthGuard)
+async searchAllSellers(@Query('q') query: string, @Request() req) {
+  if (req.user.role !== 'admin') throw new UnauthorizedException();
+  return this.sellerService.searchSeller(query ?? '');
+}
+@Get('sellers/inactive')
+@UseGuards(AuthGuard)
+async getInactiveSellers(@Request() req) {
+  if (req.user.role !== 'admin') throw new UnauthorizedException();
+  return this.sellerService.getInactiveSellers();
+}
+@Get('sellers/active')
+@UseGuards(AuthGuard)
+async getActiveSeller(@Request() req) {
+  if (req.user.role !== 'admin') throw new UnauthorizedException();
+  return this.sellerService.getActiveSellers();
+}
   
 
 }

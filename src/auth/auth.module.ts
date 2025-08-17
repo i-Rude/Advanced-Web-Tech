@@ -5,7 +5,7 @@ import { AuthController } from './auth.controller';
 import { AdminModule } from '../admin/admin.module';
 import { jwtConstants } from './auth.constants';
 import { AuthGuard } from './auth.guard';
-import { SellerModule } from 'src/seller/seller.module';
+import { SellerModule } from '../seller/seller.module';
 
 @Module({
   imports: [
@@ -17,8 +17,14 @@ import { SellerModule } from 'src/seller/seller.module';
       signOptions: { expiresIn: '1h' },
     }),
   ],
-  providers: [AuthService , AuthGuard] ,
+  providers: [
+    AuthService,
+    {
+      provide: AuthGuard,
+      useClass: AuthGuard,
+    },
+  ],
   controllers: [AuthController],
-  exports : [AuthGuard],
+  exports: [AuthGuard],
 })
 export class AuthModule {}
