@@ -6,6 +6,7 @@ import {
   BadRequestException,
   Inject,
   forwardRef,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike } from 'typeorm';
@@ -14,52 +15,65 @@ import { AddSellerDto } from './add-seller.dto';
 import { UpdateSellerDto } from './update-seller.dto';
 import * as bcrypt from 'bcrypt';
 import { AdminService } from 'src/admin/admin.service';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class SellerService {
   private readonly salt = 10;
+  private readonly logger = new Logger(SellerService.name);
 
   constructor(
     @InjectRepository(Seller)
     private readonly sellerRepository: Repository<Seller>,
     @Inject(forwardRef(() => AdminService))
     private adminService: AdminService,
+    private mailService: MailService,
   ) {}
 
-  async createSeller(addSellerDto: AddSellerDto, adminId: number): Promise<Seller> {
-  if (!addSellerDto.password) {
-    throw new BadRequestException('Password is required');
+   async createSeller(addSellerDto: AddSellerDto, adminId: number): Promise<Seller> {
+    if (!addSellerDto.password) {
+      throw new BadRequestException('Password is required');
+    }
+
+    const [emailExists, nidExists] = await Promise.all([
+      this.sellerRepository.findOne({ where: { email: addSellerDto.email } }),
+      this.sellerRepository.findOne({ where: { nid: addSellerDto.nid } }),
+    ]);
+    if (emailExists) throw new ConflictException('Email already exists');
+    if (nidExists) throw new ConflictException('NID already exists');
+
+    const seller = new Seller();
+    seller.name = addSellerDto.name;
+    seller.email = addSellerDto.email;
+    seller.password = await bcrypt.hash(addSellerDto.password, this.salt);
+    seller.phone = Number(addSellerDto.phone);
+    seller.nid = addSellerDto.nid;
+    seller.fileName = addSellerDto.fileName;
+
+    const admin = await this.adminService.getAdminById(adminId);
+    if (!admin) {
+      throw new NotFoundException(`Admin with ID ${adminId} not found`);
+    }
+    seller.admin = admin;
+
+    const savedSeller = await this.sellerRepository.save(seller);
+    
+    // Send welcome email
+    try {
+      await this.mailService.sendSellerWelcomeEmail(
+        savedSeller.email, 
+        addSellerDto.password
+      );
+    } catch (error) {
+      this.logger.error('Failed to send welcome email to seller', error);
+      // Don't throw error as seller creation was successful
+    }
+    
+    return this.sellerRepository.findOneOrFail({
+      where: { id: savedSeller.id },
+      relations: ['admin'],
+    });
   }
-
-  const [emailExists, nidExists] = await Promise.all([
-    this.sellerRepository.findOne({ where: { email: addSellerDto.email } }),
-    this.sellerRepository.findOne({ where: { nid: addSellerDto.nid } }),
-  ]);
-  if (emailExists) throw new ConflictException('Email already exists');
-  if (nidExists) throw new ConflictException('NID already exists');
-
-  const seller = new Seller();
-  seller.name = addSellerDto.name;
-  seller.email = addSellerDto.email;
-  seller.password = await bcrypt.hash(addSellerDto.password, this.salt);
-  seller.phone = Number(addSellerDto.phone);
-  seller.nid = addSellerDto.nid;
-  seller.fileName = addSellerDto.fileName;
-
-  
-  const admin = await this.adminService.getAdminById(adminId);
-  if (!admin) {
-    throw new NotFoundException(`Admin with ID ${adminId} not found`);
-  }
-  seller.admin = admin;
-
-  const saved = await this.sellerRepository.save(seller);
-  return this.sellerRepository.findOneOrFail({
-    where: { id: saved.id },
-    relations: ['admin'],
-  });
-}
-
 
   async changeSellerStatus(
     id: number,

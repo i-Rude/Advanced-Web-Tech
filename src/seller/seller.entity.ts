@@ -1,5 +1,6 @@
-import { Admin } from 'src/admin/admin.entity';
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Admin } from '../admin/admin.entity';
+import { Product } from '../product/product.entity';
 
 @Entity()
 export class Seller {
@@ -12,7 +13,7 @@ export class Seller {
   @Column({ unique: true })
   email: string;
 
-  @Column({select:false})
+  @Column({ select: false })
   password: string;
 
   @Column({ type: 'bigint' })
@@ -33,7 +34,10 @@ export class Seller {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => Admin, admin => admin.sellers,{onDelete:'SET NULL' , nullable:true})
-  @JoinColumn({name:'adminId'})
-  admin:Admin;
+  @ManyToOne(() => Admin, admin => admin.sellers, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'adminId' })
+  admin: Admin;
+
+  @OneToMany(() => Product, product => product.seller)
+  products: Product[];
 }

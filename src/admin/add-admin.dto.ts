@@ -25,9 +25,6 @@ export class AddAdminDto {
 
   @IsNotEmpty()
   @IsEmail()
-  @Matches(/^[a-zA-Z0-9._%+-]+@aiub\.edu$/, { 
-    message: 'Email must be a valid @aiub.edu address' 
-  })
   email: string;
 
   @IsNotEmpty({ message: 'Password is required' })

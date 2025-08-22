@@ -1,4 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Admin } from '../admin/admin.entity';
+import { Seller } from '../seller/seller.entity';
 
 @Entity()
 export class Product {
@@ -22,4 +24,18 @@ export class Product {
 
   @Column({ type: 'int', default: 0 })
   discount: number;
+
+  @ManyToOne(() => Admin, admin => admin.productsAdded, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'addedById' })
+  addedBy: Admin;
+
+  @Column()
+  sellerId: number;
+
+  @ManyToOne(() => Seller, seller => seller.products, { 
+    onDelete: 'CASCADE', 
+    nullable: false 
+  })
+  @JoinColumn({ name: 'sellerId' })
+  seller: Seller;
 }

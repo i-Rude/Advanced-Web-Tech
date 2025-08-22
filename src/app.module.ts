@@ -11,6 +11,7 @@ import { Seller } from './seller/seller.entity';
 import { Product } from './product/product.entity';
 import { Customer } from './customer/customer.entity';
 import { AuthModule } from './auth/auth.module';
+import { MailModule } from './mail/mail.module';
 
 
 @Module({
@@ -32,7 +33,7 @@ import { AuthModule } from './auth/auth.module';
     })
 
     ,
-    AdminModule , ProductModule, CustomerModule, AuthModule],
+    AdminModule , ProductModule, CustomerModule, AuthModule, MailModule],
   controllers: [],
   providers: [],
   

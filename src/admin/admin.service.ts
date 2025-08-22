@@ -1,18 +1,20 @@
-import { Injectable, NotFoundException, ConflictException } from "@nestjs/common";
+import { Injectable, NotFoundException, ConflictException, Logger } from "@nestjs/common";
 import { AddAdminDto } from "./add-admin.dto";
 import { UpdateAdminDto } from "./update-admin.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Admin } from "./admin.entity";
 import { Repository } from "typeorm";
 import * as bcrypt from 'bcrypt';
+import { MailService } from "src/mail/mail.service";
 
 @Injectable()
 export class AdminService {
     private readonly salt = 10;
+    private readonly logger = new Logger(AdminService.name);
     constructor(
         @InjectRepository(Admin)
         private readonly adminRepository:Repository<Admin>,
-
+        private readonly mailService: MailService,
     ){}
 
     async findAll():Promise<Admin[]> {
@@ -25,24 +27,34 @@ export class AdminService {
         return admin;
     }
 
-    async createAdmin(addAdminDto: AddAdminDto): Promise<Admin> {
-        const idExist = await this.adminRepository.findOne({ where: { id: addAdminDto.id } });
-        if (idExist) throw new ConflictException('Admin with the same ID already exists');
+      async createAdmin(addAdminDto: AddAdminDto): Promise<Admin> {
+    const idExist = await this.adminRepository.findOne({ where: { id: addAdminDto.id } });
+    if (idExist) throw new ConflictException('Admin with the same ID already exists');
 
-        const emailExists = await this.adminRepository.findOne({ where: { email: addAdminDto.email } });
-        if (emailExists) throw new ConflictException('Email already in use');
+    const emailExists = await this.adminRepository.findOne({ where: { email: addAdminDto.email } });
+    if (emailExists) throw new ConflictException('Email already in use');
 
-        const phoneExists = await this.adminRepository.findOne({ where: { phone: addAdminDto.phone } });
-        if (phoneExists) throw new ConflictException('Phone number already in use');
+    const phoneExists = await this.adminRepository.findOne({ where: { phone: addAdminDto.phone } });
+    if (phoneExists) throw new ConflictException('Phone number already in use');
 
-        const hashedPassword = await bcrypt.hash(addAdminDto.password, this.salt)
+    const hashedPassword = await bcrypt.hash(addAdminDto.password, this.salt);
 
-        const newCreatedAdmin = this.adminRepository.create({
-            ...addAdminDto,
-            password : hashedPassword
-        });
-        return this.adminRepository.save(newCreatedAdmin);
-}
+    const newCreatedAdmin = this.adminRepository.create({
+      ...addAdminDto,
+      password: hashedPassword
+    });
+    
+    const savedAdmin = await this.adminRepository.save(newCreatedAdmin);
+    
+    try {
+      await this.mailService.sendAdminWelcomeEmail(savedAdmin.email, savedAdmin.name);
+    } catch (error) {
+      this.logger.error('Failed to send welcome email to admin', error);
+     
+    }
+    
+    return savedAdmin;
+  }
     
 
     async updateAdmin(id: number, updateAdminDto: UpdateAdminDto): Promise<Admin> {

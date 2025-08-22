@@ -1,5 +1,6 @@
-import { Seller } from "src/seller/seller.entity";
 import { Column, Entity, OneToMany, PrimaryColumn } from "typeorm";
+import { Seller } from "../seller/seller.entity";
+import { Product } from "../product/product.entity";
 
 @Entity()
 export class Admin {
@@ -24,12 +25,15 @@ export class Admin {
   @Column({ nullable: true })
   fileName: string;
 
- @Column({ default: 'admin' })
- password: string;
+  @Column({ select: false })
+  password: string;
 
   @Column({ type: 'character varying', length: 11, nullable: true })
   phone: string;
 
-  @OneToMany(() => Seller , seller => seller.admin)
-  sellers : Seller[];
+  @OneToMany(() => Seller, seller => seller.admin)
+  sellers: Seller[];
+
+  @OneToMany(() => Product, product => product.addedBy)
+  productsAdded: Product[];
 }

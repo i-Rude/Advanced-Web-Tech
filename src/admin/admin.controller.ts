@@ -24,6 +24,7 @@ import { Express } from "express";
 import { AuthGuard } from "src/auth/auth.guard";
 import { AddSellerDto } from "src/seller/add-seller.dto";
 import { SellerService } from "src/seller/seller.service";
+import { Roles } from "src/auth/roles.decorator";
 
 @Controller("admin")
 export class AdminController {
@@ -34,12 +35,14 @@ export class AdminController {
 
     @Get()
     @UseGuards(AuthGuard)
+    @Roles('admin')
     async getAllAdmins(){
     return await this.adminService.findAll();
     }
 
     @Get("byId/:id")
     @UseGuards(AuthGuard)
+    @Roles('admin')
     async getAdminById(@Param("id", ParseIntPipe) id: number) {
         return await this.adminService.getAdminById(id);
     }
@@ -51,6 +54,7 @@ export class AdminController {
 
     @Patch(":id")
     @UseGuards(AuthGuard)
+    @Roles('admin')
     async updateAdmin(
         @Param("id", ParseIntPipe) id: number,
         @Body() updateAdminDto: UpdateAdminDto
@@ -60,6 +64,7 @@ export class AdminController {
 
     @Patch('updateStatus/:id')
     @UseGuards(AuthGuard)
+    @Roles('admin')
     async changeStatus(@Param('id', ParseIntPipe) id: number, @Body('status') status: 'active' | 'inactive') {
     return await this.adminService.changeStatus(id, status);
     }
@@ -74,12 +79,16 @@ export class AdminController {
     }
 
     @Delete(':id')
+    @UseGuards(AuthGuard)
+    @Roles('admin')
     async deleteAdmin(@Param('id', ParseIntPipe) id : number){
       await this.adminService.deleteAdmin(id);
       return { message: `Admin with id ${id} deleted successfully` };
     }
 
     @Post('createAdmin')
+    @UseGuards(AuthGuard)
+    @Roles('admin')
     @UseInterceptors(
     FileInterceptor('myfile', {
     storage: diskStorage({
@@ -110,6 +119,7 @@ async addAdmin(
 }
 @Get('check')
 @UseGuards(AuthGuard)
+@Roles('admin')
 testProtected() {
   return {
     message: 'You are authenticated',
@@ -118,31 +128,36 @@ testProtected() {
 }
 @Post('seller')
 @UseGuards(AuthGuard)
+@Roles('admin')
 async createSeller(@Body() dto: AddSellerDto, @Request() req) {
   if (req.user.role !== 'admin') throw new UnauthorizedException();
   return this.sellerService.createSeller(dto, req.user.id);  
 }
 
 @Get('mySellers')
-  @UseGuards(AuthGuard)
+@UseGuards(AuthGuard)
+@Roles('admin')
   async mySellers(@Request() req) {
     if (req.user.role !== 'admin') throw new UnauthorizedException();
     return this.adminService.getSellersByAdmin(req.user.sub);
   }
 @Get('sellers/search')
 @UseGuards(AuthGuard)
+@Roles('admin')
 async searchAllSellers(@Query('q') query: string, @Request() req) {
   if (req.user.role !== 'admin') throw new UnauthorizedException();
   return this.sellerService.searchSeller(query ?? '');
 }
 @Get('sellers/inactive')
 @UseGuards(AuthGuard)
+@Roles('admin')
 async getInactiveSellers(@Request() req) {
   if (req.user.role !== 'admin') throw new UnauthorizedException();
   return this.sellerService.getInactiveSellers();
 }
 @Get('sellers/active')
 @UseGuards(AuthGuard)
+@Roles('admin')
 async getActiveSeller(@Request() req) {
   if (req.user.role !== 'admin') throw new UnauthorizedException();
   return this.sellerService.getActiveSellers();

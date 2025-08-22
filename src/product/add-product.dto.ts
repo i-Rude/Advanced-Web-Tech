@@ -24,4 +24,6 @@ export class AddProductDto {
 
   @IsOptional()
   fileName?: string;
+
+ 
 }
