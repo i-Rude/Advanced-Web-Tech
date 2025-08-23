@@ -1,4 +1,17 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsNumber, IsPositive, Min } from 'class-validator';
+// src/order/add-order.dto.ts
+import { IsEmail, IsNotEmpty, IsNumber, IsPositive, Min, IsArray, ValidateNested, ArrayMinSize } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class OrderItemDto {
+  @IsNotEmpty()
+  @IsNumber()
+  productId: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @Min(1)
+  quantity: number;
+}
 
 export class AddOrderDto {
   @IsNotEmpty()
@@ -9,17 +22,17 @@ export class AddOrderDto {
   customerEmail: string;
 
   @IsNotEmpty()
-  @IsNumber()
-  @IsPositive()
-  productId: number;
+  shippingAddress: string;
 
   @IsNotEmpty()
-  @IsNumber()
-  @Min(1)
-  quantity: number;
+  phoneNumber: string;
 
   @IsNotEmpty()
-  @IsNumber()
-  @Min(0)
-  totalPrice: number;
+  paymentMethod: string;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => OrderItemDto)
+  items: OrderItemDto[];
 }

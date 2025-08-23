@@ -129,9 +129,31 @@ testProtected() {
 @Post('seller')
 @UseGuards(AuthGuard)
 @Roles('admin')
-async createSeller(@Body() dto: AddSellerDto, @Request() req) {
-  if (req.user.role !== 'admin') throw new UnauthorizedException();
-  return this.sellerService.createSeller(dto, req.user.id);  
+@UseInterceptors(
+  FileInterceptor('file', {
+    storage: diskStorage({
+      destination: './upload',
+      filename: (req, file, cb) => {
+        cb(null, Date.now() + '_' + file.originalname);
+      },
+    }),
+  }),
+)
+async createSeller(
+  @Body() dto: AddSellerDto,
+  @Request() req,
+  @UploadedFile() file?: Express.Multer.File
+) {
+  if (req.user.role !== 'admin') {
+    throw new UnauthorizedException('Only admins can create sellers');
+  }
+
+  if (file) {
+    dto.fileName = file.filename;
+  }
+
+  // Use sub instead of id to match the JWT payload
+  return this.sellerService.createSeller(dto, req.user.sub);  
 }
 
 @Get('mySellers')

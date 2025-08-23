@@ -29,12 +29,10 @@ export class AuthGuard implements CanActivate {
         token,
         { secret: jwtConstants.secret }
       );
+      console.log('Token payload in guard:', payload);
       
-      request.user = {
-        id: payload.sub,
-        email: payload.email,
-        role: payload.role
-      };
+      // Store the complete payload in the request
+      request.user = payload;
 
       
       const requiredRoles = this.reflector.get<string[]>('roles', context.getHandler()) || [];

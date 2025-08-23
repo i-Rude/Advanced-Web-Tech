@@ -10,8 +10,11 @@ import { Admin } from './admin/admin.entity';
 import { Seller } from './seller/seller.entity';
 import { Product } from './product/product.entity';
 import { Customer } from './customer/customer.entity';
+import { Order } from './order/order.entity';
+import { OrderItem } from './order/order-item.entity';
 import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
+import { OrderModule } from './order/order.module';
 
 
 @Module({
@@ -26,14 +29,14 @@ import { MailModule } from './mail/mail.module';
       username:'postgres',
       password:'admin',
       database:'ecommerce',
-      entities:[Admin, Customer, Seller,Product],
+      entities:[Admin, Customer, Seller, Product, Order, OrderItem],
       synchronize:true,
 
 
     })
 
     ,
-    AdminModule , ProductModule, CustomerModule, AuthModule, MailModule],
+    AdminModule, ProductModule, CustomerModule, AuthModule, MailModule, OrderModule],
   controllers: [],
   providers: [],
   

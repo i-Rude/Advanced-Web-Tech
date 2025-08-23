@@ -1,7 +1,11 @@
-import { Column, Entity, PrimaryColumn, BeforeInsert } from "typeorm";
+// src/customer/customer.entity.ts
+import { Column, Entity, PrimaryColumn, BeforeInsert, OneToMany } from "typeorm";
+import { Order } from '../order/order.entity';
 
 @Entity()
 export class Customer {
+    @OneToMany(() => Order, order => order.customer)
+    orders: Order[];
     @PrimaryColumn()
     id: string;
 

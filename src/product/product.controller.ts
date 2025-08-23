@@ -127,7 +127,7 @@ export class ProductController {
     return await this.productService.deleteProduct(id, req.user.sub);
   }
 
-  @Patch('seller/:id/discount')
+  @Patch(':id/discount')
   @UseGuards(AuthGuard)
   @Roles('seller')
   async applyDiscount(

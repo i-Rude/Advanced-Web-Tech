@@ -1,6 +1,6 @@
+// src/admin/admin.entity.ts
 import { Column, Entity, OneToMany, PrimaryColumn } from "typeorm";
-import { Seller } from "../seller/seller.entity";
-import { Product } from "../product/product.entity";
+import { Seller } from '../seller/seller.entity';
 
 @Entity()
 export class Admin {
@@ -33,7 +33,4 @@ export class Admin {
 
   @OneToMany(() => Seller, seller => seller.admin)
   sellers: Seller[];
-
-  @OneToMany(() => Product, product => product.addedBy)
-  productsAdded: Product[];
 }

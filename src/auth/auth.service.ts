@@ -37,6 +37,8 @@ export class AuthService {
       email: user.email,
       role: role, 
     };
+    
+    console.log('Auth payload:', payload);
 
     return {
       access_token: await this.jwtService.signAsync(payload, {

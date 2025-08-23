@@ -172,10 +172,13 @@ export class SellerService {
   }
 
   async findByEmail(email: string): Promise<Pick<Seller, 'id' | 'email' | 'password'> | null> {
-    return this.sellerRepository.findOne({
+    const seller = await this.sellerRepository.findOne({
       where: { email },
       select: ['id', 'email', 'password'],
     });
+    
+    console.log('Found seller by email:', { id: seller?.id, email: seller?.email });
+    return seller;
   }
 
   async searchSeller(q: string) {

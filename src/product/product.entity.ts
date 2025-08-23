@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Admin } from '../admin/admin.entity';
+// src/product/product.entity.ts
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { Seller } from '../seller/seller.entity';
+import { OrderItem } from 'src/order/order-item.entity';
 
 @Entity()
 export class Product {
@@ -25,17 +26,13 @@ export class Product {
   @Column({ type: 'int', default: 0 })
   discount: number;
 
-  @ManyToOne(() => Admin, admin => admin.productsAdded, { onDelete: 'SET NULL', nullable: true })
-  @JoinColumn({ name: 'addedById' })
-  addedBy: Admin;
-
-  @Column()
-  sellerId: number;
-
   @ManyToOne(() => Seller, seller => seller.products, { 
     onDelete: 'CASCADE', 
     nullable: false 
   })
   @JoinColumn({ name: 'sellerId' })
   seller: Seller;
+
+  @OneToMany(() => OrderItem, (orderItem: OrderItem) => orderItem.product)
+  orderItems: OrderItem[];
 }
